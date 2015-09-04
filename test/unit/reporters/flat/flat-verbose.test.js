@@ -10,31 +10,32 @@ var assert = require('chai').assert,
 
 describe('Reporter#FlatVerbose', function() {
     var sandbox = sinon.sandbox.create(),
-        test = {
-            suite: {path: ['block', 'size', 'big']},
-            state: {name: 'hover'},
-            browserId: 'chrome',
-            sessionId: '0fc23des'
-        },
-        ee;
+        emitter;
 
     beforeEach(function() {
         var reporter = new FlatVerboseReporter();
 
-        ee = new EventEmitter();
-        reporter.attachRunner(ee);
+        emitter = new EventEmitter();
+        reporter.attachRunner(emitter);
         sandbox.stub(logger);
     });
 
     afterEach(function() {
         sandbox.restore();
-        ee.removeAllListeners();
+        emitter.removeAllListeners();
     });
 
     it('should correctly do the rendering', function() {
-        ee.emit(RunnerEvents.BEGIN);
-        ee.emit(RunnerEvents.CAPTURE, test);
-        ee.emit(RunnerEvents.END);
+        var test = {
+            suite: {path: ['block', 'size', 'big']},
+            state: {name: 'hover'},
+            browserId: 'chrome',
+            sessionId: '0fc23des'
+        };
+
+        emitter.emit(RunnerEvents.BEGIN);
+        emitter.emit(RunnerEvents.CAPTURE, test);
+        emitter.emit(RunnerEvents.END);
 
         var deserealizedResult = chalk
             .stripColor(logger.log.args[0][0])
