@@ -130,7 +130,7 @@ describe('Reporter#Flat', function() {
     });
 
 
-    describe('should print a error if it there is in', function() {
+    describe('should print an error if it there is in', function() {
         it('result', function() {
             var test = extendTest({
                 message: 'Error from result'
