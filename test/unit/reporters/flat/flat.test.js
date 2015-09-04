@@ -158,11 +158,11 @@ describe('Reporter#Flat', function() {
     });
 
     it('should correctly do the rendering', function() {
-        var test = extendTest({
+        var test = {
             suite: {path: ['block', 'size', 'big']},
             state: {name: 'hover'},
             browserId: 'chrome'
-        });
+        };
 
         emitter.emit(RunnerEvents.BEGIN);
         emitter.emit(RunnerEvents.CAPTURE, test);
