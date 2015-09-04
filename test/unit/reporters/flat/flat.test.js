@@ -12,11 +12,11 @@ var assert = require('chai').assert,
 describe('Reporter#Flat', function() {
     var sandbox = sinon.sandbox.create(),
         test = {
-            suite: {path: ['block', 'size', 'big']},
-            state: {name: 'hover'},
-            browserId: 'chrome'
+            suite: {path: []},
+            state: {name: 'test'},
+            browserId: 0
         },
-        ee;
+        emitter;
 
     function getCounters(args) {
         args = _.last(args);
@@ -28,22 +28,26 @@ describe('Reporter#Flat', function() {
         };
     }
 
+    function extendTest(props) {
+        return _.extend({}, test, props);
+    }
+
     beforeEach(function() {
         var reporter = new FlatReporter();
 
-        ee = new EventEmitter();
-        reporter.attachRunner(ee);
+        emitter = new EventEmitter();
+        reporter.attachRunner(emitter);
         sandbox.stub(logger);
     });
 
     afterEach(function() {
         sandbox.restore();
-        ee.removeAllListeners();
+        emitter.removeAllListeners();
     });
 
     it('should initialize counters with 0', function() {
-        ee.emit(RunnerEvents.BEGIN);
-        ee.emit(RunnerEvents.END);
+        emitter.emit(RunnerEvents.BEGIN);
+        emitter.emit(RunnerEvents.END);
 
         var counters = getCounters(logger.log.args);
 
@@ -55,9 +59,9 @@ describe('Reporter#Flat', function() {
 
     describe('should correctly calculate counters for', function() {
         it('successed', function() {
-            ee.emit(RunnerEvents.BEGIN);
-            ee.emit(RunnerEvents.CAPTURE, test);
-            ee.emit(RunnerEvents.END);
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.CAPTURE, test);
+            emitter.emit(RunnerEvents.END);
 
             var counters = getCounters(logger.log.args);
 
@@ -68,9 +72,9 @@ describe('Reporter#Flat', function() {
         });
 
         it('failed', function() {
-            ee.emit(RunnerEvents.BEGIN);
-            ee.emit(RunnerEvents.ERROR, test);
-            ee.emit(RunnerEvents.END);
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.ERROR, test);
+            emitter.emit(RunnerEvents.END);
 
             var counters = getCounters(logger.log.args);
 
@@ -81,9 +85,9 @@ describe('Reporter#Flat', function() {
         });
 
         it('skipped', function() {
-            ee.emit(RunnerEvents.BEGIN);
-            ee.emit(RunnerEvents.WARNING, test);
-            ee.emit(RunnerEvents.END);
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.WARNING, test);
+            emitter.emit(RunnerEvents.END);
 
             var counters = getCounters(logger.log.args);
 
@@ -96,11 +100,13 @@ describe('Reporter#Flat', function() {
 
     describe('should correctly choose a handler if `equal` is', function() {
         it('true', function() {
-            test.equal = true;
+            var test = extendTest({
+                equal: true
+            });
 
-            ee.emit(RunnerEvents.BEGIN);
-            ee.emit(RunnerEvents.END_TEST, test);
-            ee.emit(RunnerEvents.END);
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.END_TEST, test);
+            emitter.emit(RunnerEvents.END);
 
             var counters = getCounters(logger.log.args);
 
@@ -108,11 +114,13 @@ describe('Reporter#Flat', function() {
             assert.equal(counters.failed, 0);
         });
         it('false', function() {
-            test.equal = false;
+            var test = extendTest({
+                equal: false
+            });
 
-            ee.emit(RunnerEvents.BEGIN);
-            ee.emit(RunnerEvents.END_TEST, test);
-            ee.emit(RunnerEvents.END);
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.END_TEST, test);
+            emitter.emit(RunnerEvents.END);
 
             var counters = getCounters(logger.log.args);
 
@@ -121,10 +129,44 @@ describe('Reporter#Flat', function() {
         });
     });
 
+
+    describe('should print a error if it there is in', function() {
+        it('result', function() {
+            var test = extendTest({
+                message: 'Error from result'
+            });
+
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.ERROR, test);
+            emitter.emit(RunnerEvents.END);
+
+            assert.equal(logger.error.args[0][0], test.message);
+        });
+
+        it('originalError', function() {
+            var test = extendTest({
+                originalError: {message: 'Error from originalError'}
+            });
+
+            emitter.emit(RunnerEvents.BEGIN);
+            emitter.emit(RunnerEvents.ERROR, test);
+            emitter.emit(RunnerEvents.END);
+
+            assert.equal(logger.error.args[0][0], test.originalError.message);
+        });
+
+    });
+
     it('should correctly do the rendering', function() {
-        ee.emit(RunnerEvents.BEGIN);
-        ee.emit(RunnerEvents.CAPTURE, test);
-        ee.emit(RunnerEvents.END);
+        var test = extendTest({
+            suite: {path: ['block', 'size', 'big']},
+            state: {name: 'hover'},
+            browserId: 'chrome'
+        });
+
+        emitter.emit(RunnerEvents.BEGIN);
+        emitter.emit(RunnerEvents.CAPTURE, test);
+        emitter.emit(RunnerEvents.END);
 
         var deserealizedResult = chalk
             .stripColor(logger.log.args[0][0])
