@@ -129,7 +129,6 @@ describe('Reporter#Flat', function() {
         });
     });
 
-
     describe('should print an error if it there is in', function() {
         it('result', function() {
             var test = extendTest({
@@ -154,7 +153,6 @@ describe('Reporter#Flat', function() {
 
             assert.equal(logger.error.args[0][0], test.originalError.message);
         });
-
     });
 
     it('should correctly do the rendering', function() {
